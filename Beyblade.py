@@ -1,10 +1,13 @@
 from vpython import *
 scene = canvas(width=800, height=800)
 radius = 1
-beyblade = cone(pos=vec(0,0,0),radius=radius)
+beyblade = cone(pos=vec(0,0,0),radius=radius, color=color.hsv_to_rgb(vector(0.5,1,0.8)))
+top = cylinder(pos=vec(0.2,-0.2,0), axis=vec(0,1,0), size=vec(0.5,0.2,0.2), color=color.hsv_to_rgb(vector(0.5,1,0.8)))
 
 #Rotates beyblade to a side view
 beyblade.rotate(axis=vec(0,0,1),angle=-pi/2)
+spin = compound([beyblade, top])
+# top.rotate(axis=vec(0,0,1), angle=-pi/2)
 
 g=9.81
 M = 1
@@ -25,6 +28,6 @@ def leaveLoop():
 endButton = button(bind=leaveLoop,text="Click me to stop rotating!")
 
 while (leave):
-    # beyblade.rotate(axis=vec(0,1,0),angle=)
+    spin.rotate(axis=vec(0,1,0),angle=pi/360)
     rate(1000)
 
