@@ -8,6 +8,7 @@ top = cylinder(pos=vec(0.2,-0.2,0), axis=vec(0,1,0), size=vec(0.5,0.2,0.2), colo
 beyblade.rotate(axis=vec(0,0,1),angle=-pi/2)
 spin = compound([beyblade, top])
 # top.rotate(axis=vec(0,0,1), angle=-pi/2)
+spin.rotate(axis=vec(1,0,0), angle=-pi/90)
 
 g=9.81
 M = 1
