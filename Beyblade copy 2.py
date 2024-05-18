@@ -13,13 +13,12 @@ spin.rotate(axis=vec(1,0,0), angle=-pi/90)
 
 g=9.81
 M = 1
-theta = pi
-PE = 0
-KE = 0
+theta = pi/6
 friction = 0
 I = 3 * M * (radius**2) /10
 ω = 0
 L = I*ω
+com = vector(0,3*length/4,0)
 t=0; dt=3600
 leave = True
 

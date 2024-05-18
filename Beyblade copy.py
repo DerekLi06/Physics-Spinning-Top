@@ -15,7 +15,7 @@ r=length*mag(e3)
 
 #Constants
 g=1
-M = 10
+M = 1
 Rcm = (3/4) * length #Center of Mass
 I_star = (3/20.) * M *(radius**2.+4.*length**2) #Moment of Inertia along X, Y
 I_33 = (.3*M*length**2.) #Moment of Inertia along Z
