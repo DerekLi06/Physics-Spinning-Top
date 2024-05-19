@@ -1,33 +1,41 @@
 from vpython import *
+
 scene = canvas(width=800, height=800)
 radius = 1
 length = 1
-beyblade = cone(pos=vec(0,0,0),length = length,radius=radius, color=color.hsv_to_rgb(vector(0.5,1,0.8)))
-top = cylinder(pos=vec(0.2,-0.2,0), axis=vec(0,1,0), size=vec(0.5,0.2,0.2), color=color.hsv_to_rgb(vector(0.5,1,0.8)))
+yaxis = arrow(pos=vec(0, length, 0), axis=vec(0, 1, 0), color=color.green)
 
-#Rotates beyblade to a side view
-beyblade.rotate(axis=vec(0,0,1),angle=-pi/2)
-spin = compound([beyblade, top])
-# top.rotate(axis=vec(0,0,1), angle=-pi/2)
-spin.rotate(axis=vec(1,0,0), angle=-pi/90)
+# Initialize beyblade with a tilt
+beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, 
+                texture=textures.granite)
 
-g=9.81
+g = 9.81
 M = 1
-theta = pi/6
-friction = 0
-I = 3 * M * (radius**2) /10
-ω = 0
-L = I*ω
-com = vector(0,3*length/4,0)
-t=0; dt=3600
+I = 3 * M * (radius**2) / 10
+ω = 10*pi
+dt = .005
 leave = True
+# Angular velocity of precession
+OMEGA = 10 * g * length / (3 * ω * radius**2)
 
 def leaveLoop():
     global leave 
-    leave = not(leave)
+    leave = not leave
 
-endButton = button(bind=leaveLoop,text="Click me to stop rotating!")
+endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
 
-while (leave):
-    spin.rotate(axis=vec(0,1,0),angle=pi/360)
-    rate(1000)
+beyblade.rotate(angle=pi/6, origin=vector(0,0.01,0),axis=vector(0,0,1))
+
+# earrow to visualize the current axis of the beyblade
+earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
+# earrow.rotate(angle=pi/6, origin=vector(0,0.01,0),axis=vector(0,0,1))
+while leave:
+    rate(100)
+    # Spin the beyblade about its own axis
+    beyblade.rotate(angle=ω * dt, axis=beyblade.axis,origin=beyblade.pos)
+    # Precession: rotate the axis of the beyblade around the vertical y-axis
+    # beyblade.axis = rotate(beyblade.axis, angle=OMEGA * dt, axis=vec(0, 1, 0))
+    beyblade.rotate(angle=OMEGA*dt,origin=vector(0,0,0),axis=vector(0,1,0))
+    # Update the arrow to match the new axis of the beyblade
+    earrow.rotate(angle=OMEGA*dt,origin=vector(0,0,0),axis=vector(0,1,0))
+    
