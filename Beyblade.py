@@ -27,7 +27,7 @@ def leaveLoop():
     leave = not leave
 
 endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
-tilt_angle = pi / 6
+tilt_angle = pi / 180
 
 beyblade.rotate(angle=tilt_angle, origin=vector(0,0,0),axis=vector(0,0,1))
 COM = vector((-3/4)*sin(tilt_angle), 0, 0)
@@ -46,8 +46,8 @@ while leave:
     beyblade.rotate(angle=ω * dt, axis=beyblade.axis,origin=beyblade.pos)
     # Precession: rotate the axis of the beyblade around the vertical y-axis
     # beyblade.axis = rotate(beyblade.axis, angle=OMEGA * dt, axis=vec(0, 1, 0))
-    beyblade.rotate(angle=OMEGA*dt,origin=vector(COM.x,beyblade.axis.y,COM.z),axis=vector(0,1,0))
-    earrow.rotate(angle=OMEGA*dt,origin=vector(COM.x,beyblade.axis.y,COM.z),axis=vector(0,1,0))
+    beyblade.rotate(angle=OMEGA*dt,origin=vector(COM.x,0,COM.z),axis=vector(0,1,0))
+    earrow.rotate(angle=OMEGA*dt,origin=vector(COM.x,0,COM.z),axis=vector(0,1,0))
     rotated_angle += OMEGA*dt
     print("rotated angle:", degrees(rotated_angle))
 
@@ -56,8 +56,8 @@ while leave:
     current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
     tilt_angle += tilt_increment
     # Rotate slightly to simulate tilting due to gravity
-    beyblade.rotate(angle=tilt_increment, origin=vector(COM.x,beyblade.axis.y,COM.z),axis=vector(1, 0, 0))
-    earrow.rotate(angle=tilt_increment, origin=vector(COM.x,beyblade.axis.y,COM.z),axis=vector(1, 0, 0))
+    beyblade.rotate(angle=tilt_increment, origin=vector(COM.x,0,COM.z),axis=vector(1, 0, 0))
+    earrow.rotate(angle=tilt_increment, origin=vector(COM.x,0,COM.z),axis=vector(1, 0, 0))
 
     if(rotated_angle/(pi/2)<1):
         # COM = vector((-3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*sin(rotated_angle), 0, 0-(3/4)*sin(tilt_angle)*cos(rotated_angle))
