@@ -34,7 +34,7 @@ earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 
 initial_angle_diff = diff_angle(vector(0,1,0), beyblade.axis)
 print("Initial angle difference:", degrees(initial_angle_diff))
-tilt_factor = .0005
+tilt_increment = .0005
 while leave:
     rate(50)
     # Spin the beyblade about its own axis
@@ -47,11 +47,10 @@ while leave:
     ω *= damping_omega
     OMEGA *= damping_omega_prec
     current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
-    tilt_increment = 0.0005
     tilt_angle += tilt_increment
     # Rotate slightly to simulate tilting due to gravity
-    beyblade.rotate(angle=tilt_increment, axis=vec(1, 0, 0))
-    earrow.rotate(angle=tilt_increment, axis=vec(1, 0, 0))
+    beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
+    earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
 
     print("Current angle difference:", degrees(current_angle_diff))
     if diff_angle(vector(0,1,0),-beyblade.axis) > radians(45):
@@ -60,5 +59,6 @@ while leave:
         OMEGA = 0
         dt = 0
         # tilt_angle = 0
-        tilt_factor = 0 
+        tilt_factor = 0
+        tilt_increment = 0 
     
