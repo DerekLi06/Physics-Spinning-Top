@@ -27,7 +27,7 @@ def leaveLoop():
 endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
 tilt_angle = pi / 6
 
-beyblade.rotate(angle=tilt_angle, origin=vector(0,0.01,0),axis=vector(0,0,1))
+beyblade.rotate(angle=tilt_angle, origin=vector(0,0.0,0),axis=vector(0,0,1))
 
 # earrow to visualize the current axis of the beyblade
 earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
@@ -47,15 +47,23 @@ while leave:
     ω *= damping_omega
     OMEGA *= damping_omega_prec
     current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
-    tilt_increment = 0.0005
-    tilt_angle += tilt_increment
+    tilt_angle += tilt_factor
     # Rotate slightly to simulate tilting due to gravity
-    beyblade.rotate(angle=tilt_increment, axis=vec(1, 0, 0))
-    earrow.rotate(angle=tilt_increment, axis=vec(1, 0, 0))
+    print("Beyblade: "+str(beyblade.axis))
+    print("BEYBLADE XZ: "+str(vector(beyblade.axis.x,0,beyblade.axis.z)))
 
-    print("Current angle difference:", degrees(current_angle_diff))
+    if (beyblade.axis.z == 0 or beyblade.axis.x == 0):
+        tilt_axis = vector(beyblade.axis.z,0,beyblade.axis.x)
+    else:
+        tilt_axis = vector(1,0,-(beyblade.axis.x)/(beyblade.axis.z))
+    print("CROSS: "+str(tilt_axis))
+
+    beyblade.rotate(angle=tilt_factor, axis=tilt_axis, origin=vector(0,0,0))
+    earrow.rotate(angle=tilt_factor, axis=tilt_axis, origin=vector(0,0,0))
+
+    # print("Current angle difference:", degrees(current_angle_diff))
     if diff_angle(vector(0,1,0),-beyblade.axis) > radians(45):
-        print("top has fallen")     
+        # print("top has fallen")     
         ω = 0
         OMEGA = 0
         dt = 0
