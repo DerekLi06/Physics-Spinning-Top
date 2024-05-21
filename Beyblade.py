@@ -27,11 +27,11 @@ def leaveLoop():
     leave = not leave
 
 endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
-tilt_angle = pi / 180
+tilt_angle = pi / 10
 
 beyblade.rotate(angle=tilt_angle, origin=vector(0,0,0),axis=vector(0,0,1))
-COM = vector((-3/4)*sin(tilt_angle), 0, 0)
-# COM_line = curve(pos=[COM, vec(COM.x,2,0)], color = color.white)
+COM = -beyblade.axis*3/4
+COM_line = curve(pos=[vector(COM.x,0,COM.z), vec(COM.x,2,COM.z)], color = color.white)
 
 # earrow to visualize the current axis of the beyblade
 earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
@@ -56,23 +56,25 @@ while leave:
     current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
     tilt_angle += tilt_increment
     # Rotate slightly to simulate tilting due to gravity
-    beyblade.rotate(angle=tilt_increment, origin=vector(COM.x,0,COM.z),axis=vector(1, 0, 0))
-    earrow.rotate(angle=tilt_increment, origin=vector(COM.x,0,COM.z),axis=vector(1, 0, 0))
+    beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
+    earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
 
-    if(rotated_angle/(pi/2)<1):
-        # COM = vector((-3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*sin(rotated_angle), 0, 0-(3/4)*sin(tilt_angle)*cos(rotated_angle))
-        # COM = vector((-3/4)*sin(tilt_angle) + (3/4)*sin(tilt_angle)*sin(rotated_angle), 0, 0)
-        # COM = vector(0, 0, (3/4)*sin(tilt_angle)*sin(rotated_angle))
-        COM = vector((-3/4)*sin(tilt_angle) + (3/4)*sin(tilt_angle)*sin(rotated_angle), 0, (3/4)*sin(tilt_angle)*sin(rotated_angle))
-    elif(rotated_angle/(pi/2)>1):
-        # COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, (-3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*sin(rotated_angle))
-        # COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, 0)
-        # COM = vector(0, 0, (3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*cos(rotated_angle))
-        COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, (3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*cos(rotated_angle))
+    # print("axis" + str(beyblade.axis))
 
-    # COM_line.append(pos=[COM, vec(COM.x,2,COM.z)], retain = 1)
+    # if(rotated_angle/(pi/2)<1):
+    #     # COM = vector((-3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*sin(rotated_angle), 0, 0-(3/4)*sin(tilt_angle)*cos(rotated_angle))
+    #     # COM = vector((-3/4)*sin(tilt_angle) + (3/4)*sin(tilt_angle)*sin(rotated_angle), 0, 0)
+    #     # COM = vector(0, 0, (3/4)*sin(tilt_angle)*sin(rotated_angle))
+    #     COM = vector((-3/4)*sin(tilt_angle) + (3/4)*sin(tilt_angle)*sin(rotated_angle), 0, (3/4)*sin(tilt_angle)*sin(rotated_angle))
+    # elif(rotated_angle/(pi/2)>1):
+    #     # COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, (-3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*sin(rotated_angle))
+    #     # COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, 0)
+    #     # COM = vector(0, 0, (3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*cos(rotated_angle))
+    #     COM = vector((-3/4)*sin(tilt_angle)*cos(rotated_angle), 0, (3/4)*sin(tilt_angle)+(3/4)*sin(tilt_angle)*cos(rotated_angle))
+    COM = beyblade.axis*-3/4
+    COM_line.append(pos=[vec(COM.x, 0, COM.z), vec(COM.x,2,COM.z)], retain = 1)
 
-    print("Current angle difference:", degrees(current_angle_diff))
+    # print("Current angle difference:", degrees(current_angle_diff))
     if diff_angle(vector(0,1,0),-beyblade.axis) > radians(45):
         print("top has fallen")     
         ω = 0
