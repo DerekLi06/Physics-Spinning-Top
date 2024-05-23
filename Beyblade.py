@@ -56,8 +56,12 @@ while leave:
     current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
     tilt_angle += tilt_increment
     # Rotate slightly to simulate tilting due to gravity
-    beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
-    earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
+    if (beyblade.axis.z == 0 or beyblade.axis.x == 0):
+        tilt_axis = vector(beyblade.axis.z,0,beyblade.axis.x)
+    else:
+        tilt_axis = vector(1,0,-(beyblade.axis.x)/(beyblade.axis.z))
+    beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=tilt_axis)
+    earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=tilt_axis)
 
     # print("axis" + str(beyblade.axis))
 
