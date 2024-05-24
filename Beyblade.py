@@ -1,7 +1,7 @@
 from vpython import *
 
 scene = canvas(width=800, height=800)
-radius = 1
+radius = 0.5
 length = 1
 yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green)
 
@@ -31,18 +31,29 @@ earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 # r = spinning top
 # p = precession
 # n = nutation
+current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
 
 # Intertias
 Ir = 3*M*radius**2/10
 Ip = 3*M*(radius**2+4*length**2)/20
 
 # Angular Velocities
-wr = 10*pi
-wp = M*g*radius/(Ip * wr)
+wr = 5*pi
+# wp = M*g*radius/(Ip * wr)
 
 # Angular Momentum
 Lr = Ir*wr
+# Lp = Ip*wp
+
+fric_coeff = 0.05
+Ff = fric_coeff*M*g
+Ff_torque = Ff*cos(current_angle_diff)
+
+torque = M*g*(3/4*length)*sin(current_angle_diff)
+wp = torque/(Lr*sin(current_angle_diff))
 Lp = Ip*wp
+
+ang_acc = Ff_torque/Ir
 
 # Angles
 # Ap = (Lp - Lr*cos(diff_angle(vector(0,1,0),-beyblade.axis)))/(Ip*sin(diff_angle(vector(0,1,0),-beyblade.axis)))
@@ -64,25 +75,29 @@ rotated_angle = 0
 while leave:
     rate(50)
     # Spin the beyblade about its own axis
-    beyblade.rotate(angle=wr * dt, axis=beyblade.axis,origin=beyblade.pos)
+    beyblade.rotate(angle=wr*dt, axis=beyblade.axis,origin=beyblade.pos)
     # Precession: rotate the axis of the beyblade around the vertical y-axis
     # beyblade.axis = rotate(beyblade.axis, angle=OMEGA * dt, axis=vec(0, 1, 0))
     beyblade.rotate(angle=wp*dt,origin=vector(0,0,0),axis=vector(0,1,0))
     earrow.rotate(angle=wp*dt,origin=vector(0,0,0),axis=vector(0,1,0))
     rotated_angle += wp*dt
     print("rotated angle:", degrees(rotated_angle))
+
+    current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
+    if (wr > 0):
+        wr = wr - ang_acc*dt
+    elif (wr < 0):
+        wr = wr + ang_acc*dt
+    Lr = Ir*wr
+    wp = torque/(Lr*sin(current_angle_diff))
+    Lp = Ip*wp
     
     # wr *= damping_omega
     # wp *= damping_omega_prec
-    current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
     # tilt_angle += tilt_increment
     # Rotate slightly to simulate tilting due to gravity
-    if (beyblade.axis.z == 0 or beyblade.axis.x == 0):
-        tilt_axis = vector(beyblade.axis.z,0,beyblade.axis.x)
-    else:
-        tilt_axis = vector(1,0,-(beyblade.axis.x)/(beyblade.axis.z))
-    beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=tilt_axis)
-    earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=tilt_axis)
+    # beyblade.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
+    # earrow.rotate(angle=tilt_increment, origin=vector(0,0,0),axis=vector(1, 0, 0))
 
     # print("axis" + str(beyblade.axis))
 
