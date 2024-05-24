@@ -3,7 +3,7 @@ from vpython import *
 scene = canvas(width=800, height=800)
 radius = 0.5
 length = 1
-yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green)
+yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green,shaftwidth=.05)
 
 beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, 
                 texture=textures.granite)
@@ -70,7 +70,6 @@ endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
 
 initial_angle_diff = diff_angle(vector(0,1,0), beyblade.axis)
 print("Initial angle difference:", degrees(initial_angle_diff))
-tilt_increment = .0005
 rotated_angle = 0
 while leave:
     rate(50)

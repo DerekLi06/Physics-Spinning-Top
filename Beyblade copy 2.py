@@ -1,72 +1,71 @@
 from vpython import *
 
 scene = canvas(width=800, height=800)
-radius = 1
+radius = 0.5
 length = 1
-yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green)
+yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green, shaftwidth=0.05)
 
-beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, 
-                texture=textures.granite)
+beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, texture=textures.granite)
 
 g = 9.81
 M = 1
-I = 3 * M * (radius**2) / 10
-ω = 10*pi
-dt = .005
+dt = 0.005
 leave = True
-# Angular velocity of precession
-OMEGA = 10 * g * length / (3 * ω * radius**2)
 
-damping_omega = 0.9995  # damping for spin
-damping_omega_prec = 0.999  # damping for precession
+COM = vector(0, 0, 0)
+tilt_angle = pi / 18  # Smaller initial tilt angle
+
+beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
+COM = -beyblade.axis * 3 / 4
+# COM_line = curve(pos=[vector(COM.x, 0, COM.z), vec(COM.x, 2, COM.z)], color=color.white)
+
+earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
+
+Ir = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
+Ip = 3 * M * (radius ** 2 + 4 * length ** 2) / 20  # Moment of inertia around the perpendicular axis
+
+wr = 5 * pi  # Spin rate around its own axis
+Lr = Ir * wr  # Angular momentum around its own axis
+
+def calculate_torque(angle_diff):
+    return M * g * (3 / 4 * length) * sin(angle_diff)
+
+def calculate_wp(torque, Lr, angle_diff):
+    if Lr * sin(angle_diff) != 0:
+        return torque / (Lr * sin(angle_diff))
+    else:
+        return 0
 
 def leaveLoop():
-    global leave 
+    global leave
     leave = not leave
 
 endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
-tilt_angle = pi / 6
 
-beyblade.rotate(angle=tilt_angle, origin=vector(0,0.0,0),axis=vector(0,0,1))
+initial_angle_diff = diff_angle(vector(0, 1, 0), beyblade.axis)
+rotated_angle = 0
 
-# earrow to visualize the current axis of the beyblade
-earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
-
-initial_angle_diff = diff_angle(vector(0,1,0), beyblade.axis)
-print("Initial angle difference:", degrees(initial_angle_diff))
-tilt_factor = .0005
 while leave:
     rate(50)
-    # Spin the beyblade about its own axis
-    beyblade.rotate(angle=ω * dt, axis=beyblade.axis,origin=beyblade.pos)
-    # Precession: rotate the axis of the beyblade around the vertical y-axis
-    # beyblade.axis = rotate(beyblade.axis, angle=OMEGA * dt, axis=vec(0, 1, 0))
-    beyblade.rotate(angle=OMEGA*dt,origin=vector(0,0,0),axis=vector(0,1,0))
-    earrow.rotate(angle=OMEGA*dt,origin=vector(0,0,0),axis=vector(0,1,0))
 
-    ω *= damping_omega
-    OMEGA *= damping_omega_prec
-    current_angle_diff = diff_angle(vector(0,1,0), -beyblade.axis)
-    tilt_angle += tilt_factor
-    # Rotate slightly to simulate tilting due to gravity
-    print("Beyblade: "+str(beyblade.axis))
-    print("BEYBLADE XZ: "+str(vector(beyblade.axis.x,0,beyblade.axis.z)))
+    beyblade.rotate(angle=wr * dt, axis=beyblade.axis, origin=beyblade.pos)
 
-    if (beyblade.axis.z == 0 or beyblade.axis.x == 0):
-        tilt_axis = vector(beyblade.axis.z,0,beyblade.axis.x)
-    else:
-        tilt_axis = vector(1,0,-(beyblade.axis.x)/(beyblade.axis.z))
-    print("CROSS: "+str(tilt_axis))
+    current_angle_diff = diff_angle(vector(0, 1, 0), -beyblade.axis)
+    torque = calculate_torque(current_angle_diff)
+    wp = calculate_wp(torque, Lr, current_angle_diff)
 
-    beyblade.rotate(angle=tilt_factor, axis=tilt_axis, origin=vector(0,0,0))
-    earrow.rotate(angle=tilt_factor, axis=tilt_axis, origin=vector(0,0,0))
+    beyblade.rotate(angle=wp * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+    earrow.rotate(angle=wp * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+    rotated_angle += wp * dt
 
-    # print("Current angle difference:", degrees(current_angle_diff))
-    if diff_angle(vector(0,1,0),-beyblade.axis) > radians(45):
-        # print("top has fallen")     
-        ω = 0
-        OMEGA = 0
-        dt = 0
-        # tilt_angle = 0
-        tilt_factor = 0 
-    
+    # Introduce nutation by slightly perturbing the tilt angle
+    nutation_angle = 0.005 * sin(rotated_angle)  # Small oscillation
+    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
+
+    # Update angular momentum
+    Lr = Ir * wr
+
+    print("Current angle difference:", degrees(current_angle_diff))
+    if diff_angle(vector(0, 1, 0), -beyblade.axis) > radians(63):
+        print("Top has fallen")
+        break
