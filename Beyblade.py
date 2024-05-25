@@ -89,7 +89,7 @@ while leave:
         wr = wr + ang_acc*dt
     Lr = Ir*wr
     wp = torque/(Lr*sin(current_angle_diff))
-    Lp = Ip*wp
+    # Lp = Ip*wp
     
     # wr *= damping_omega
     # wp *= damping_omega_prec
