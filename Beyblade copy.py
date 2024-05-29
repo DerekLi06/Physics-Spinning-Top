@@ -83,17 +83,17 @@ while leave:
     beyblade.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
     Lhat.rotate(angle=omega_pr * dt, axis=vector(0, 1, 0))
     earrow.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
-    rotated_angle += omega_pr * dt
+    rotated_angle += omega_pr * dt * 5
 
     # Calculate nutation angular velocity
     nutation_rate = calculate_nutation_rate(L, I_perp)
 
     # Apply nutation
     nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
-    nutation_angle = nutation_rate * dt * sin(rotated_angle) * 100
+    nutation_angle = nutation_rate * dt * sin(rotated_angle)
     print("nutation angle: ",nutation_angle)
 
-    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=earrow.axis)
+    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
 
     # Update angular momentum
     L = I0 * omega0
