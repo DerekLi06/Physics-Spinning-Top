@@ -12,7 +12,7 @@ M = 1
 dt = 0.005
 leave = True
 #angular velocity
-omega0 = 2.25 * pi  # Spin rate around its own axis
+omega0 = 5 * pi  # Spin rate around its own axis
 
 tilt_angle = pi / 4  # Initial tilt angle
 
@@ -48,7 +48,7 @@ earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
 Lhat = norm(beyblade.axis)
 # Moments of inertia
-I0 = 0.5 * M * radius ** 2  # Moment of inertia around the spinning axis
+I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
 I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20  # Moment of inertia around the perpendicular axis
 
 # Angular momentum
@@ -87,11 +87,13 @@ while leave:
 
     # Calculate nutation angular velocity
     nutation_rate = calculate_nutation_rate(L, I_perp)
-    
+
     # Apply nutation
     nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
     nutation_angle = nutation_rate * dt * sin(rotated_angle)
-    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
+    print("nutation angle: ",nutation_angle)
+
+    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=earrow.axis)
 
     # Update angular momentum
     L = I0 * omega0
@@ -104,6 +106,6 @@ while leave:
         path.pop(0)
 
     print("Current angle difference:", degrees(diff_angle(vector(0, -1, 0), beyblade.axis)))  # Correct axis orientation
-    if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(63):  # Correct axis orientation
+    if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(69):  # Correct axis orientation
         print("Top has fallen")
         break
