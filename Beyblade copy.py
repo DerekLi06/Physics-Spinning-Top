@@ -90,7 +90,7 @@ while leave:
 
     # Apply nutation
     nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
-    nutation_angle = nutation_rate * dt * sin(rotated_angle)
+    nutation_angle = nutation_rate * dt * sin(rotated_angle) * 100
     print("nutation angle: ",nutation_angle)
 
     beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=earrow.axis)
