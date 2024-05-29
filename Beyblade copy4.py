@@ -18,7 +18,7 @@ beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
 
 earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
-
+Lhat = norm(beyblade.axis)
 # Moments of inertia
 I0 = 0.5 * M * radius ** 2  # Moment of inertia around the spinning axis
 I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20  # Moment of inertia around the perpendicular axis
@@ -54,6 +54,7 @@ while leave:
     
     # Apply precession
     beyblade.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+    Lhat.rotate(angle=omega_pr * dt, axis=vector(0, 1, 0))
     earrow.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
     rotated_angle += omega_pr * dt
 
@@ -61,7 +62,7 @@ while leave:
     nutation_rate = calculate_nutation_rate(L, I_perp)
     
     # Apply nutation
-    nutation_axis = cross(-beyblade.axis, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
+    nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
     nutation_angle = nutation_rate * dt * sin(rotated_angle)
     beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
 
