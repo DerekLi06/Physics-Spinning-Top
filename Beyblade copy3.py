@@ -90,17 +90,19 @@ while leave:
     earrow.rotate(angle=wp * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
     rotated_angle += wp * dt
 
-    # Introduce nutation by slightly perturbing the tilt angle
-    nutation_angle = 0.005 * sin(rotated_angle)  # Small oscillation
-    beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
-    earrow.rotate(angle=nutation_angle, origin=vector(0,0,0), axis=vector(1,0,0))
-
     # Update angular velocity + momentum
     if (wr > 0):
         wr = wr - opp_torque*dt    
     Lr = Ir * wr
+
+    # Introduce nutation by slightly perturbing the tilt angle
+    if(wr < 0):
+        nutation_angle = 0.005 * sin(rotated_angle)  # Small oscillation
+        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
+        earrow.rotate(angle=nutation_angle, origin=vector(0,0,0), axis=vector(1,0,0))
+
     print("Current wr: ", wr)
-    print("Current angle difference:", degrees(current_angle_diff))
+    # print("Current angle difference:", degrees(current_angle_diff))
     if diff_angle(vector(0, 1, 0), -beyblade.axis) > radians(63):
         print("Top has fallen")
         break
