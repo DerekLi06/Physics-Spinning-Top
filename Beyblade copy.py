@@ -65,7 +65,7 @@ while (t<200):
         theta_dot = theta_dot + sqrt(2/I_star)*sqrt((Energy-(.5*L3**2)/I_33-g*M*Rcm*cos(theta)-((Lz-L3*cos(theta)))))
         phi_dot = phi_dot+(Lz-L3*cos(theta))/(I_star*sin(theta)**2)*dt
         phi = phi+phi_dot*dt
-    beyblade.rotate(angle=pi/3, axis=beyblade.axis, origin=beyblade.pos)
+    beyblade.rotate(angle=dt*pi/6, axis=beyblade.axis, origin=beyblade.pos)
     beyblade.pos = vector(r*sin(theta)*sin(phi),r*cos(theta),r*sin(theta)*cos(phi))
     beyblade.axis=-beyblade.pos
 
