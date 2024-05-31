@@ -48,8 +48,8 @@ earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
 Lhat = norm(beyblade.axis)
 # Moments of inertia
-I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
-I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20  # Moment of inertia around the perpendicular axis
+I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis/vertical
+I_perp = (3 * M * ((radius ** 2) + (4 * length ** 2))) / 20  # Moment of inertia around the perpendicular axis/horizontal
 
 # Angular momentum
 L = I0 * omega0  # Angular momentum around its own axis
@@ -69,6 +69,7 @@ endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
 a = 3 / 4 * length
 initial_angle_diff = diff_angle(vector(0, -1, 0), beyblade.axis)  # Correct axis orientation
 rotated_angle = 0
+
 
 while leave:
     rate(50)
@@ -90,6 +91,9 @@ while leave:
 
     # Apply nutation
     nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
+    diffAngle = diff_angle(vector(0,1,0),-beyblade.axis)
+    k = I0/I_perp
+    omega = M*g*a/I_perp
     nutation_angle = nutation_rate * dt * sin(rotated_angle)
     print("nutation angle: ",nutation_angle)
 
