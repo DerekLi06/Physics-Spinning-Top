@@ -69,9 +69,10 @@ endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
 a = 3 / 4 * length
 initial_angle_diff = diff_angle(vector(0, -1, 0), beyblade.axis)  # Correct axis orientation
 rotated_angle = 0
-
+time = 0
 
 while leave:
+    time += dt
     rate(50)
 
     # Spin the beyblade around its own axis
@@ -94,7 +95,9 @@ while leave:
     diffAngle = diff_angle(vector(0,1,0),-beyblade.axis)
     k = I0/I_perp
     omega = M*g*a/I_perp
-    nutation_angle = nutation_rate * dt * sin(rotated_angle)
+    oscillation = - sin(diffAngle)
+    # nutation_angle = nutation_rate * dt * sin(rotated_angle)
+    nutation_angle = -sin(diffAngle) * sin(k*omega_pr*time) * dt
     print("nutation angle: ",nutation_angle)
 
     beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
