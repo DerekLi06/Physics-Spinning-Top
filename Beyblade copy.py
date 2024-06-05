@@ -20,6 +20,10 @@ leave = True
 #angular velocity
 omega0 = 5 * pi  # Spin rate around its own axis
 
+# opposing force
+uk = 0.5
+fric_torq = uk * M * g * 0.004
+
 tilt_angle = pi / 4  # Initial tilt angle
 
 beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
@@ -45,7 +49,7 @@ def mass_set(initial):
     I0 = 3 * M * radius ** 2 / 10
     I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20
     L = I0 * omega0
-    mass_caption.text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "\n\n"
+    mass_caption.text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "kg\n\n"
 my_mass = slider(bind = mass_set, min = 0.1, max = 5, step = 0.1, value = M)
 mass_caption = wtext(text = 'mass = '+'{:1.2f}'.format(my_mass.value) + " kg\n\n")
 
@@ -73,18 +77,29 @@ def tilt_set(initial):
     beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
     earrow.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
     Lhat = norm(beyblade.axis)
-    tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "\n\n" #degrees
+    tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n" #degrees
 my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/3, step = pi/360, value = tilt_angle)
-tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + " kg\n\n") #degress
+tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n") #degress
+
+def fric_coeff(initial):
+    global uk
+    global fric_torq
+    uk = initial.value
+    fric_torq = uk * M * g * radius
+    fric_caption.text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n"
+my_fric = slider(bind = fric_coeff, min = 0.01, max = 2, step = 0.01, value = uk)
+fric_caption = wtext(text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n")
 
 #button for locking in slider decisions
 def lock():
     global my_mass
     global my_omega0
     global my_tilt
+    global my_fric
     my_mass.disabled = True
     my_omega0.disabled = True
     my_tilt.disabled = True
+    my_fric.disabled = True
 
 confirm = button(bind=lock, text = "Click me to lock in your top properties!")
 start = wtext(text = "\n\n\t\t\tClick in the Canvas to Start the Simulation!\n\n", visible = False)
@@ -128,18 +143,32 @@ def restart():
     global my_mass
     global my_omega0
     global my_tilt
+    global my_fric
+    global Lhat
+    global I_perp
+    global L
+    global I0
+    global uk
+    global fric_torq
     beyblade.pos = vec(0,length,0)
     beyblade.axis = vec(0,-1,0)
     my_mass.disabled = False
     my_omega0.disabled = False
     my_tilt.disabled = False
+    my_fric.disabled = False
     confirm.disabled = False
     M = 1
     omega0 = 5 * pi
     tilt_angle = pi / 4
+    uk = 0.5
     my_mass.value = M
+    mass_caption.text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "kg\n\n"
     my_omega0.value = omega0
+    omega0_caption.text = 'omega0 = '+'{:1.2f}'.format(my_omega0.value) + " radians \n\n" #radians
     my_tilt.value = tilt_angle
+    tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n" #degrees
+    my_fric.value = uk
+    fric_caption.text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n"
     for i in range(50):
         path.pop(0)
     beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
@@ -149,6 +178,7 @@ def restart():
     I0 = 3 * M * radius ** 2 / 10 
     I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20 
     L = I0 * omega0 
+    fric_torq = uk * M * g * radius
     endButton.disabled = True
     reset.disabled = True
     pause_start.disabled = True
@@ -159,6 +189,7 @@ def restart():
     my_mass.disabled = True
     my_omega0.disabled = True
     my_tilt.disabled = True
+    my_fric.disabled = True
     endButton.disabled = False
     reset.disabled = False
     pause_start.disabled = False
@@ -172,6 +203,7 @@ confirm.disabled = True
 my_mass.disabled = True
 my_omega0.disabled = True
 my_tilt.disabled = True
+my_fric.disabled = True
 
 while leave:
     rate(50)
@@ -202,6 +234,8 @@ while leave:
         beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
     
         # Update angular momentum
+        if(omega0 > 0):
+            omega0 = omega0 - fric_torq*dt
         L = I0 * omega0
     
         # Trace the path of the top's axis slightly above the actual axis
