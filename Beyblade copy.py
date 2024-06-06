@@ -43,7 +43,7 @@ caption = wtext(text = "\n\t\t Modify the Top's Properties Using the Sliders Bel
 def mass_set(initial):
     global mass
     global I0
-    global I_prep
+    global I_perp
     global L
     mass = initial.value
     I0 = 3 * M * radius ** 2 / 10
