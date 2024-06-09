@@ -4,6 +4,7 @@ radius = 1
 e3  = vector(1,1,1)
 
 t = 0;dt = .5
+print(sin(pi))
 while (t<100):
     rate(1)
     t=t+dt

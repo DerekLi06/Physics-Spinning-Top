@@ -1,108 +1,218 @@
 from vpython import *
 
-scene = canvas(width=800, height=800)
+scene = canvas(width=600, height=400)
+scene.center = vec(0, 0, 0)
+scene.forward = vec(0,-0.5,-1)
+# scene.camera.rotate(angle = 45, axis = vec(0,1,0))
+# scene.center = vec(0, 0, 0)
 radius = 0.5
 length = 1
 yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green, shaftwidth=0.05)
-
+plane = cylinder(pos=vec(0, 0, 0), axis = vec(0, 1, 0), radius=2, length = 0.01, texture=textures.earth)
+light = distant_light(direction = vec(-0.5,-0.8,-0.5), color = color.white)
 beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, texture=textures.granite)
 
+running = True
 g = 9.81
 M = 1
-wr = 5*pi  # Spin rate around its own axis
-dt = 0.005
+dt = 0.05
 leave = True
+#angular velocity
+omega0 = 5 * pi  # Spin rate around its own axis
+
+tilt_angle = pi / 4  # Initial tilt angle
+
+beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
+
+earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
+path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
+Lhat = norm(beyblade.axis)
+# Moments of inertia
+I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
+I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20  # Moment of inertia around the perpendicular axis
+
+# Angular momentum
+L = I0 * omega0  # Angular momentum around its own axis
 
 #slider for mass
+caption = wtext(text = "\n\t\t Modify the Top's Properties Using the Sliders Below: \n\n")
 def mass_set(initial):
     global mass
+    global I0
+    global I_prep
+    global L
     mass = initial.value
+    I0 = 3 * M * radius ** 2 / 10
+    I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20
+    L = I0 * omega0
     mass_caption.text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "\n\n"
-my_mass = slider(bind = mass_set, min = 1, max = 5, step = 0.1, value = M)
-mass_caption = wtext(text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "\n\n")
+my_mass = slider(bind = mass_set, min = 0.1, max = 5, step = 0.1, value = M)
+mass_caption = wtext(text = 'mass = '+'{:1.2f}'.format(my_mass.value) + " kg\n\n")
 
-#slider for initial wr
-def wr_set(initial):
-    global wr
-    wr = initial.value
-    wr_caption.text = 'wr = '+'{:1.2f}'.format(my_wr.value) + "\n\n" #radians
-my_wr = slider(bind = wr_set, min = 0, max = 30*pi, step = 0.1, value = wr) 
-wr_caption = wtext(text = 'wr = '+'{:1.2f}'.format(my_wr.value) + "\n\n") #radians
-
-initial_angle_diff = diff_angle(vector(0, 1, 0), beyblade.axis)
-rotated_angle = 0
-
-opp_force = 1 #temp variable to represent opposing force
-
-COM = vector(0, 0, 0)
-tilt_angle = pi / 18  # Smaller initial tilt angle
+#slider for initial omega0
+def omega0_set(initial):
+    global omega0
+    global L
+    omega0 = initial.value
+    L = I0 * omega0
+    omega0_caption.text = 'omega0 = '+'{:1.2f}'.format(my_omega0.value) + " radians \n\n" #radians
+my_omega0 = slider(bind = omega0_set, min = 0, max = 10*pi, step = 0.1, value = omega0) 
+omega0_caption = wtext(text = 'omega0 = '+'{:1.2f}'.format(my_omega0.value) + " radians\n\n") #radians
 
 #slider for initial tilt angle
 def tilt_set(initial):
     global tilt_angle
+    global Lhat
+    global beyblade
+    global earrow
     tilt_angle = initial.value
+    beyblade.pos = vec(0, length, 0)
+    beyblade.axis = vec(0, -1, 0)
+    earrow.axis = -beyblade.axis
+    earrow.length = 2
+    beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
+    earrow.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
+    Lhat = norm(beyblade.axis)
     tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "\n\n" #degrees
-my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/2, step = pi/360, value = tilt_angle)
-tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "\n\n") #degress
+my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/3, step = pi/360, value = tilt_angle)
+tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + " kg\n\n") #degress
 
-scene.pause()
+#button for locking in slider decisions
+def lock():
+    global my_mass
+    global my_omega0
+    global my_tilt
+    my_mass.disabled = True
+    my_omega0.disabled = True
+    my_tilt.disabled = True
 
-beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
-COM = -beyblade.axis * 3 / 4
-# COM_line = curve(pos=[vector(COM.x, 0, COM.z), vec(COM.x, 2, COM.z)], color=color.white)
+confirm = button(bind=lock, text = "Click me to lock in your top properties!")
+start = wtext(text = "\n\n\t\t\tClick in the Canvas to Start the Simulation!\n\n", visible = False)
 
-earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
+myevnt = scene.pause()
 
-Ir = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
-Ip = 3 * M * (radius ** 2 + 4 * length ** 2) / 20  # Moment of inertia around the perpendicular axis
+def calculate_precession_rate(L, a, tilt_angle):
+    return M * g * a * cos(tilt_angle) / L
 
-Lr = Ir * wr  # Angular momentum around its own axis
-
-def calculate_torque(angle_diff):
-    return M * g * (3 / 4 * length) * sin(angle_diff)
-
-def calculate_wp(torque, Lr, angle_diff):
-    if Lr * sin(angle_diff) != 0:
-        return torque / (Lr * sin(angle_diff))
-    else:
-        return 0
-
-def calculate_opp(angle_diff):
-    return opp_force * cos(angle_diff)
+def calculate_nutation_rate(L, I_perp):
+    return L / I_perp
 
 def leaveLoop():
     global leave
     leave = not leave
 
 endButton = button(bind=leaveLoop, text="Click me to stop rotating!")
+wtext(text = "\t\t")
 
+#start/pause button
+def run(b):
+    global running
+    if running:
+        b.text = "Start"
+    else:
+        b.text = "Pause"
+    running = not running
+
+pause_start = button(bind=run, text = "Pause")
+
+a = (3 / 4) * length
+initial_angle_diff = diff_angle(vector(0, -1, 0), beyblade.axis)  # Correct axis orientation
+rotated_angle = 0
+
+#reset button
+def restart():
+    global running
+    global M
+    global omega0
+    global tilt_angle
+    global my_mass
+    global my_omega0
+    global my_tilt
+    beyblade.pos = vec(0,length,0)
+    beyblade.axis = vec(0,-1,0)
+    my_mass.disabled = False
+    my_omega0.disabled = False
+    my_tilt.disabled = False
+    confirm.disabled = False
+    M = 1
+    omega0 = 5 * pi
+    tilt_angle = pi / 4
+    my_mass.value = M
+    my_omega0.value = omega0
+    my_tilt.value = tilt_angle
+    for i in range(50):
+        path.pop(0)
+    beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
+    earrow.axis = -beyblade.axis
+    earrow.length = 2
+    Lhat = norm(beyblade.axis)
+    I0 = 3 * M * radius ** 2 / 10 
+    I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20 
+    L = I0 * omega0 
+    endButton.disabled = True
+    reset.disabled = True
+    pause_start.disabled = True
+    running = False
+    scene.pause()
+    running = True
+    confirm.disabled = True
+    my_mass.disabled = True
+    my_omega0.disabled = True
+    my_tilt.disabled = True
+    endButton.disabled = False
+    reset.disabled = False
+    pause_start.disabled = False
+    running = True
+    
+wtext(text = "\t\t")
+reset = button(bind = restart, text = "Reset")
+wtext(text = "\n\n")
+
+confirm.disabled = True
+my_mass.disabled = True
+my_omega0.disabled = True
+my_tilt.disabled = True
+time = 0 
 while leave:
     rate(50)
+    if running:
+        # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
+        # scene.center = vec(0, 0, 0)
 
-    beyblade.rotate(angle=wr * dt, axis=beyblade.axis, origin=beyblade.pos)
+        # Spin the beyblade around its own axis
+        beyblade.rotate(angle=omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
 
-    current_angle_diff = diff_angle(vector(0, 1, 0), -beyblade.axis)
-    torque = calculate_torque(current_angle_diff)
-    wp = calculate_wp(torque, Lr, current_angle_diff)
-    opp_torque = calculate_opp(current_angle_diff) #temp variable to represent opposing torque
+        # Calculate precession angular velocity
+        omega_pr = calculate_precession_rate(L, a, initial_angle_diff)
+        
+        # Apply precession
+        beyblade.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+        Lhat.rotate(angle=omega_pr * dt, axis=vector(0, 1, 0))
+        earrow.rotate(angle=omega_pr * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+        rotated_angle += omega_pr * dt * 5
 
-    beyblade.rotate(angle=wp * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
-    earrow.rotate(angle=wp * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
-    rotated_angle += wp * dt
+        # Calculate nutation angular velocity
+        nutation_rate = calculate_nutation_rate(L, I_perp)
+        k = (I0/I_perp)*omega_pr
+        # Apply nutation
+        theta = tilt_angle*(1- cos(I0*omega_pr*time/I_perp))
+        nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
+        nutation_angle = (theta-diff_angle(vector(0, -1, 0), beyblade.axis)) * dt
+        print("nutation angle: ",nutation_angle)
 
-    # Update angular velocity + momentum
-    if (wr > 0):
-        wr = wr - opp_torque*dt    
-    Lr = Ir * wr
+        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
+    
+        # Update angular momentum
+        L = I0 * omega0
 
-    # Introduce nutation by slightly perturbing the tilt angle
-    if(wr < 0):
-        nutation_angle = 0.005 * sin(rotated_angle)  # Small oscillation
-        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=vector(1, 0, 0))
-        earrow.rotate(angle=nutation_angle, origin=vector(0,0,0), axis=vector(1,0,0))
-
-    print("Current wr: ", wr)
-    # print("Current angle difference:", degrees(current_angle_diff))
-    if diff_angle(vector(0, 1, 0), -beyblade.axis) > radians(63):
-        print("Top has fallen")
-        break
+        # Trace the path of the top's axis slightly above the actual axis
+        path.append(pos=-beyblade.axis * 1.5)
+        time+=dt
+        # Keep the path temporary
+        if path.npoints > 50:  # Adjust the number of points for the temporary path
+            path.pop(0)
+    
+        print("Current angle difference:", degrees(diff_angle(vector(0, -1, 0), beyblade.axis)))  # Correct axis orientation
+        if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(69):  # Correct axis orientation
+            print("Top has fallen")
+            break
