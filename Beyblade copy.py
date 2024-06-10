@@ -32,6 +32,18 @@ earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
 path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
 Lhat = norm(beyblade.axis)
 # Moments of inertia
+I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis/vertical
+I_perp = (3 * M * ((radius ** 2) + (4 * length ** 2))) / 20  # Moment of inertia around the perpendicular axis/horizontal
+
+# Angular momentum
+L = I0 * omega0  # Angular momentum around its own axis
+
+beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
+
+earrow = arrow(length=2, axis=-beyblade.axis, color=color.red, shaftwidth=0.007)
+path = curve(color=color.yellow, radius=0.005)  # Initialize the path curve
+Lhat = norm(beyblade.axis)
+# Moments of inertia
 I0 = 3 * M * radius ** 2 / 10  # Moment of inertia around the spinning axis
 I_perp = (3 * M * (radius ** 2 + 4 * length ** 2)) / 20  # Moment of inertia around the perpendicular axis
 
@@ -206,6 +218,7 @@ my_tilt.disabled = True
 my_fric.disabled = True
 
 while leave:
+    time += dt
     rate(50)
     if running:
         scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
