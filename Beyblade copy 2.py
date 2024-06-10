@@ -5,20 +5,21 @@ scene.center = vec(0, 0, 0)
 scene.forward = vec(0,-0.5,-1)
 # scene.camera.rotate(angle = 45, axis = vec(0,1,0))
 # scene.center = vec(0, 0, 0)
-radius = 0.5
-length = 1
+radius = 1
+length = .9
 yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green, shaftwidth=0.05)
 plane = cylinder(pos=vec(0, 0, 0), axis = vec(0, 1, 0), radius=2, length = 0.01, texture=textures.earth)
 light = distant_light(direction = vec(-0.5,-0.8,-0.5), color = color.white)
-beyblade = cone(pos=vec(0, length, 0), axis=vec(0, -1, 0), length=length, radius=radius, texture=textures.granite)
+beyblade = cone(pos=vec(0, 1, 0), axis=vec(0, -1, 0), length=1, radius=radius/2, texture=textures.granite)
+nutation_arrow = arrow(pos=vec(0, 0, 0), axis=vec(1, 0, 0), color=color.blue, shaftwidth=0.03)
 
 running = True
 g = 9.81
-M = 2
+M = 10
 dt = 0.005
 leave = True
 #angular velocity
-omega0 = 2 * pi  # Spin rate around its own axis
+omega0 = 3 * pi  # Spin rate around its own axis
 theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
 print("theta1 ",theta)
 tilt_angle = pi/6 +.00001  # Initial tilt angle
@@ -118,6 +119,12 @@ def run(b):
 
 pause_start = button(bind=run, text = "Pause")
 
+def calculate_beta(alpha, M, r, l):
+    I0 = 3 * M * r ** 2 / 10
+    I_perp = 3 * M * (r ** 2 + 4 * (3 / 4 * l) ** 2) / 20
+    beta = asin(sin(alpha) * (I_perp / I0))
+    return beta
+
 a = (3 / 4) * length
 initial_angle_diff = diff_angle(vector(0, -1, 0), beyblade.axis)  # Correct axis orientation
 rotated_angle = 0
@@ -197,9 +204,16 @@ def quadraticEqSolver(a,b,c):
     else:
         return [(-b+sqrt(b**2-4*a*c))/(2*a), (-b-sqrt(b**2-4*a*c))/(2*a)]
 print("Tielt_ angle: ",tilt_angle)
+nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Ensure nutation axis is perpendicular to -Lhat
+beta = calculate_beta(tilt_angle,M,radius,length)
+print("Beta: ",degrees(beta))
+down = True
 turn = 0
+
+previous_theta_dot = theta_dot
+
 while leave:
-    rate(35)
+    rate(30)
     if running:
         # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
         # scene.center = vec(0, 0, 0)
@@ -219,41 +233,44 @@ while leave:
         a2 = -A - (L/I_perp)**2 
         bounds = quadraticEqSolver(B,a2,a1)
         # Apply nutation
-        nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()  # Correct nutation axis orthogonal to both spin and precession
         phi_dot = (Lz-L*cos(tilt_angle))/(I_perp*(sin(theta)**2))
-        if (abs(((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)) < 1e-3):
-            theta_dot = 1e-2
-        elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)<0):
-           theta_dot = theta_dot+sqrt(abs((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2))*dt
+        print("previous_theta_dot: ",previous_theta_dot)
+        if (previous_theta_dot<0 and theta_dot>0):
+            print("DOWN IS NOW TRUE!")
+            theta_dot = 0
+            down = True
+        previous_theta_dot = theta_dot
+        if (down and theta>=beta):
+            print("I ran!")
+            theta_dot = -theta_dot
+            down = False
+        
+        elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
+           theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)
            print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2))
-        else:
-            theta_dot =  -theta_dot
+        
         nutation_angle = theta_dot*dt
         omega_pr = omega_pr + phi_dot*dt
         # Apply precession
-        print("omega_pr: ",omega_pr)
+        print("omega_pr*dt: ",omega_pr*dt)
         beyblade.rotate(angle=omega_pr*dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
         Lhat.rotate(angle=omega_pr*dt, axis=vector(0, 1, 0))
         earrow.rotate(angle=omega_pr*dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+
         # rotated_angle += omega_pr * dt * 5
         theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
-        # if (theta <= tilt_angle or (goingDown and ((B*(cos(tilt_angle) - cos(theta)) - ( (L*(cos(tilt_angle)-cos(theta))) / (I_perp*sin(theta)))**2 )>=0))):
-        #     print("positive!")
-        #     nutation_angle = sqrt(abs(B*(cos(tilt_angle) - cos(theta)) - ( (L*(cos(tilt_angle)-cos(theta))) / (I_perp*sin(theta)))**2 )) * dt
-        # else:
-        #     print("negative!")
-        #     goingDown = False
-        #     nutation_angle = -sqrt(abs(B*(cos(tilt_angle) - cos(theta)) - ( (L*(cos(tilt_angle)-cos(theta))) / (I_perp*sin(theta)))**2 )) * dt
+        tangent = cross(beyblade.axis, vector(0, 1, 0)).norm()
         print("nutation angle: ",nutation_angle)
         print("theta: ",degrees(theta))
         print("theta_dot: ",theta_dot)
         print("phi_dot: ",phi_dot)
         print("Current angle difference:", degrees(diff_angle(vector(0, -1, 0), beyblade.axis)))  # Correct axis orientation
+        print("\n")
 
-        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=nutation_axis)
+        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=tangent)
     
-        # Update angular momentum
-    
+        nutation_arrow.pos = beyblade.pos
+        nutation_arrow.axis = tangent * 2
         # Trace the path of the top's axis slightly above the actual axis
         path.append(pos=-beyblade.axis * 1.5)
         time+=dt
