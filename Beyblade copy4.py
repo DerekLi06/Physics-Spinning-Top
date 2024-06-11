@@ -147,17 +147,29 @@ def tilt_set(initial):
     phi_dot = float(Lz-L)
     beta = calculate_beta(tilt_angle,M,radius,length)
     tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "\n\n" #degrees
-my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/3, step = pi/360, value = tilt_angle)
-tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + " kg\n\n") #degress
+my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/4, step = pi/360, value = tilt_angle)
+tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n") #degress
+
+#slider for initial friction coefficient
+def fric_coeff(initial):
+    global uk
+    global fric_torq
+    uk = initial.value
+    fric_torq = uk * M * g * 0.004
+    fric_caption.text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n"
+my_fric = slider(bind = fric_coeff, min = 0.01, max = 2, step = 0.01, value = uk)
+fric_caption = wtext(text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n")
 
 #button for locking in slider decisions
 def lock():
     global my_mass
     global my_omega0
     global my_tilt
+    global my_fric
     my_mass.disabled = True
     my_omega0.disabled = True
     my_tilt.disabled = True
+    my_fric.disabled = True
 
 confirm = button(bind=lock, text = "Click me to lock in your top properties!")
 start = wtext(text = "\n\n\t\t\tClick in the Canvas to Start the Simulation!\n\n", visible = False)
@@ -190,6 +202,7 @@ def restart():
     global tilt_angle
     global my_mass
     global my_omega0
+    global my_fric
     global L
     global I_perp
     global Lhat
@@ -207,19 +220,28 @@ def restart():
     global down
     global turn
     global previous_theta_dot
-    beyblade.pos = vec(0,length,0)
+    global uk
+    global fric_torq
+    beyblade.pos = vec(0,1,0)
     beyblade.axis = vec(0,-1,0)
     my_mass.disabled = False
     my_omega0.disabled = False
     my_tilt.disabled = False
+    my_fric.disabled = False
     confirm.disabled = False
     M = 1
     omega0 = 2 * pi
     tilt_angle = pi/6 +.00001
+    uk = 0.5
     my_mass.value = M
+    mass_caption.text = 'mass = '+'{:1.2f}'.format(my_mass.value) + "kg\n\n"
     my_omega0.value = omega0
+    omega0_caption.text = 'omega0 = '+'{:1.2f}'.format(my_omega0.value) + " radians \n\n" #radians
     my_tilt.value = tilt_angle
-    for i in range(50):
+    tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n" #degrees
+    my_fric.value = uk
+    fric_caption.text = 'friction coefficient = '+'{:1.2f}'.format(my_fric.value) + "\n\n"
+    for i in range(100):
         path.pop(0)
     beyblade.rotate(angle=tilt_angle, origin=vector(0, 0, 0), axis=vector(0, 0, 1))
     earrow.axis = -beyblade.axis
@@ -228,6 +250,7 @@ def restart():
     I0 = 3 * M * radius ** 2 / 10 
     I_perp = (3 * M * (radius ** 2 + 4 * (length*3/4) ** 2)) / 20
     L = I0 * omega0
+    fric_torq = uk * M * g * 0.004
     theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
     nutation_arrow.pos = vec(0,0,0)
     nutation_arrow.axis = vec(1,0,0)
@@ -243,14 +266,6 @@ def restart():
     down = True
     turn = 0
     previous_theta_dot = theta_dot
-    print("theta2 ",degrees(theta))
-    print("I0: ", I0)
-    print("I_perp", I_perp)
-    print("Energy:", Energy)
-    print("L3", L)
-    print("Lz: ", Lz)
-    print("tilt_angle", tilt_angle)
-    print("beta: ", degrees(beta))
     endButton.disabled = True
     reset.disabled = True
     pause_start.disabled = True
@@ -261,6 +276,7 @@ def restart():
     my_mass.disabled = True
     my_omega0.disabled = True
     my_tilt.disabled = True
+    my_fric.disabled = True
     endButton.disabled = False
     reset.disabled = False
     pause_start.disabled = False
@@ -274,9 +290,10 @@ confirm.disabled = True
 my_mass.disabled = True
 my_omega0.disabled = True
 my_tilt.disabled = True
+my_fric.disabled = True
 
 while leave:
-    rate(50)
+    rate(150)
     if running:
         # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
         # scene.center = vec(0, 0, 0)
@@ -296,20 +313,22 @@ while leave:
         bounds = quadraticEqSolver(B,a2,a1)
         # Apply nutation
         phi_dot = (Lz-L*cos(tilt_angle))/(I_perp*(sin(theta)**2))
-        print("previous_theta_dot: ",previous_theta_dot)
+        # print("previous_theta_dot: ",previous_theta_dot)
         if (previous_theta_dot<0 and theta_dot>0):
-            print("DOWN IS NOW TRUE!")
+            # print("DOWN IS NOW TRUE!")
             theta_dot = 0
             down = True
         previous_theta_dot = theta_dot
         if (down and theta>=beta):
-            print("I ran!")
+            # print("I ran!")
             theta_dot = -theta_dot
             down = False
         elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
-           theta_dot = theta_dot+(sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
-           print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
-        
+           theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
+        #    print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
+
+        # theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
+
         nutation_angle = theta_dot*dt
         omega_pr = omega_pr + phi_dot*dt
         # Apply precession
@@ -332,10 +351,21 @@ while leave:
     
         nutation_arrow.pos = beyblade.pos
         nutation_arrow.axis = tangent * 2
+
+        # Update angular momentum
+        if(omega0 > 0):
+            omega0 = omega0 - fric_torq*dt
+            L = I0 * omega0
+
+        # if(M*g*(radius/2)*sin(diff_angle(vector(0,-1,0), beyblade.axis)) * time > L):
+        #     print("falling")
+        #     beyblade.rotate(angle=0.0001, origin=vec(0,0,0), axis=tangent)
+        # print("Current angle diff:", degrees(diff_angle(vector(0,-1,0), beyblade.axis)))
+
         # Trace the path of the top's axis slightly above the actual axis
         path.append(pos=-beyblade.axis * 1.5)
         time+=dt
-        if path.npoints > 50:  # Adjust the number of points for the temporary path
+        if path.npoints > 100:  # Adjust the number of points for the temporary path
             path.pop(0)
     
         if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(69):  # Correct axis orientation
