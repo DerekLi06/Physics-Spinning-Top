@@ -19,7 +19,7 @@ M = 1
 dt = 0.005
 leave = True
 #angular velocity
-omega0 = 2 * pi  # Spin rate around its own axis
+omega0 = 3 * pi  # Spin rate around its own axis
 theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
 print("theta1 ",theta)
 tilt_angle = pi/6 +.00001  # Initial tilt angle
@@ -282,7 +282,7 @@ while leave:
         # scene.center = vec(0, 0, 0)
 
         # Spin the beyblade around its own axis
-        beyblade.rotate(angle=omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
+        beyblade.rotate(angle=3*omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
 
         # Calculate precession angular velocity
         B = 2*M*g*a/I_perp
@@ -307,7 +307,7 @@ while leave:
             theta_dot = -theta_dot
             down = False
         elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
-           theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
+           theta_dot = theta_dot+(sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
            print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
         
         nutation_angle = theta_dot*dt
