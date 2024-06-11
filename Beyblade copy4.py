@@ -8,9 +8,9 @@ scene.forward = vec(0,-0.5,-1)
 radius = 1
 length = .9
 yaxis = arrow(pos=vec(0, 0, 0), axis=vec(0, 1, 0), color=color.green, shaftwidth=0.05)
-plane = cylinder(pos=vec(0, 0, 0), axis = vec(0, 1, 0), radius=2, length = 0.01, texture=textures.earth)
+plane = cylinder(pos=vec(0, 0, 0), axis = vec(0, 1, 0), radius=2, length = 0.01, texture=textures.wood)
 light = distant_light(direction = vec(-0.5,-0.8,-0.5), color = color.white)
-beyblade = cone(pos=vec(0, 1, 0), axis=vec(0, -1, 0), length=1, radius=radius/2, texture=textures.granite)
+beyblade = cone(pos=vec(0, 1, 0), axis=vec(0, -1, 0), length=1, radius=radius/2, texture=textures.gravel)
 nutation_arrow = arrow(pos=vec(0, 0, 0), axis=vec(1, 0, 0), color=color.blue, shaftwidth=0.03)
 
 running = True
@@ -19,7 +19,10 @@ M = 1
 dt = 0.005
 leave = True
 #angular velocity
-omega0 = 3 * pi  # Spin rate around its own axis
+omega0 = 2 * pi  # Spin rate around its own axis
+# opposing force
+uk = 0.5
+fric_torq = uk * M * g * 0.004
 theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
 print("theta1 ",theta)
 tilt_angle = pi/6 +.00001  # Initial tilt angle
@@ -147,7 +150,7 @@ def tilt_set(initial):
     phi_dot = float(Lz-L)
     beta = calculate_beta(tilt_angle,M,radius,length)
     tilt_caption.text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "\n\n" #degrees
-my_tilt = slider(bind = tilt_set, min = pi/360, max = pi/4, step = pi/360, value = tilt_angle)
+my_tilt = slider(bind = tilt_set, min = pi/18, max = pi/4, step = pi/360, value = tilt_angle)
 tilt_caption = wtext(text = 'initial tilt = '+'{:1.2f}'.format(degrees(my_tilt.value)) + "°\n\n") #degress
 
 #slider for initial friction coefficient
@@ -293,13 +296,13 @@ my_tilt.disabled = True
 my_fric.disabled = True
 
 while leave:
-    rate(150)
+    rate(100)
     if running:
-        # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
-        # scene.center = vec(0, 0, 0)
+        scene.camera.rotate(angle = -0.001, axis = vec(0,1,0))
+        scene.center = vec(0, 0, 0)
 
         # Spin the beyblade around its own axis
-        beyblade.rotate(angle=3*omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
+        beyblade.rotate(angle=omega0 * dt*3, axis=beyblade.axis, origin=beyblade.pos)
 
         # Calculate precession angular velocity
         B = 2*M*g*a/I_perp
@@ -319,14 +322,18 @@ while leave:
             theta_dot = 0
             down = True
         previous_theta_dot = theta_dot
-        if (down and theta>=beta):
+        if (down and theta>beta):
             # print("I ran!")
             theta_dot = -theta_dot
             down = False
         elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
            theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
         #    print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
-
+        if(theta_dot == 0 and previous_theta_dot == 0):
+            theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
+            theta_dot = -theta_dot
+        # print("current", theta_dot)
+        # print("prev", previous_theta_dot)
         # theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
 
         nutation_angle = theta_dot*dt
@@ -353,14 +360,22 @@ while leave:
         nutation_arrow.axis = tangent * 2
 
         # Update angular momentum
+        old_L = L
         if(omega0 > 0):
             omega0 = omega0 - fric_torq*dt
             L = I0 * omega0
+        dL = old_L - L
+
+        fall_angle = abs(asin(dL / (dt * M * g * radius)))
+        # print("fall angle: ", degrees(fall_angle))
+        if(M*g*radius*sin(diff_angle(vector(0,-1,0), beyblade.axis)*time > L*1.2)):
+            print("yes")
+            beyblade.rotate(angle=fall_angle, origin=vec(0,0,0), axis=tangent)
 
         # if(M*g*(radius/2)*sin(diff_angle(vector(0,-1,0), beyblade.axis)) * time > L):
         #     print("falling")
         #     beyblade.rotate(angle=0.0001, origin=vec(0,0,0), axis=tangent)
-        # print("Current angle diff:", degrees(diff_angle(vector(0,-1,0), beyblade.axis)))
+        print("Current angle diff:", degrees(diff_angle(vector(0,-1,0), beyblade.axis)))
 
         # Trace the path of the top's axis slightly above the actual axis
         path.append(pos=-beyblade.axis * 1.5)
