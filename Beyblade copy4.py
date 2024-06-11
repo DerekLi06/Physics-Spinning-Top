@@ -12,10 +12,12 @@ plane = cylinder(pos=vec(0, 0, 0), axis = vec(0, 1, 0), radius=2, length = 0.01,
 light = distant_light(direction = vec(-0.5,-0.8,-0.5), color = color.white)
 beyblade = cone(pos=vec(0, 1, 0), axis=vec(0, -1, 0), length=1, radius=radius/2, texture=textures.granite)
 nutation_arrow = arrow(pos=vec(0, 0, 0), axis=vec(1, 0, 0), color=color.blue, shaftwidth=0.03)
-
-running = True
+uk=0.5
 g = 9.81
 M = 1
+
+fric_torq = uk*M*g*.004
+running = True
 dt = 0.005
 leave = True
 #angular velocity
@@ -194,6 +196,7 @@ def run(b):
 
 pause_start = button(bind=run, text = "Pause")
 
+
 #reset button
 def restart():
     global running
@@ -259,7 +262,7 @@ def restart():
     Energy = ((Lz-L*cos(tilt_angle))**2 / (2*I_perp*(sin(tilt_angle)**2))) + (L**2 / (2*I0)) + (M*g*a*cos(tilt_angle))
     goingDown = True
     time = 0
-    theta_dot = 1e-3
+    theta_dot = 0
     phi_dot = float(Lz-L)
     nutation_axis = cross(-Lhat, vec(0, 1, 0)).norm()
     beta = calculate_beta(tilt_angle,M,radius,length)
@@ -293,7 +296,7 @@ my_tilt.disabled = True
 my_fric.disabled = True
 
 while leave:
-    rate(150)
+    rate(50)
     if running:
         # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
         # scene.center = vec(0, 0, 0)
@@ -313,19 +316,21 @@ while leave:
         bounds = quadraticEqSolver(B,a2,a1)
         # Apply nutation
         phi_dot = (Lz-L*cos(tilt_angle))/(I_perp*(sin(theta)**2))
-        # print("previous_theta_dot: ",previous_theta_dot)
-        if (previous_theta_dot<0 and theta_dot>0):
-            # print("DOWN IS NOW TRUE!")
+        print("previous_theta_dot: ",previous_theta_dot)
+        if (theta<=tilt_angle):
+            print("Theta_dot reached upper bound")
             theta_dot = 0
             down = True
-        previous_theta_dot = theta_dot
-        if (down and theta>=beta):
-            # print("I ran!")
-            theta_dot = -theta_dot
+        if (theta>=beta):
+            print("Theta reached beta bound")
             down = False
+        previous_theta_dot = theta_dot
+        if (not(down)):
+            theta_dot = -tilt_angle*sin(theta*.05)
+            print("Negative theta_dot: ",theta_dot)
         elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
-           theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
-        #    print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
+            theta_dot = tilt_angle*sin(theta*.05)
+            print("Positive theta_dot: ",theta_dot)
 
         # theta_dot = theta_dot+sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))-(M*g*a*cos(theta))) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20
 
@@ -338,7 +343,6 @@ while leave:
         earrow.rotate(angle=omega_pr*dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
 
         # rotated_angle += omega_pr * dt * 5
-        theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
         tangent = cross(beyblade.axis, vector(0, 1, 0)).norm()
         # print("nutation angle: ",nutation_angle)
         # print("theta: ",degrees(theta))
@@ -348,7 +352,9 @@ while leave:
         # print("\n")
 
         beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=tangent)
-    
+        theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
+        print("Theta: ",degrees(theta))
+        print("\n")
         nutation_arrow.pos = beyblade.pos
         nutation_arrow.axis = tangent * 2
 

@@ -19,7 +19,7 @@ M = 1
 dt = 0.005
 leave = True
 #angular velocity
-omega0 = 3 * pi  # Spin rate around its own axis
+omega0 = 2 * pi  # Spin rate around its own axis
 theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
 print("theta1 ",theta)
 tilt_angle = pi/6 +.00001  # Initial tilt angle
@@ -274,54 +274,72 @@ confirm.disabled = True
 my_mass.disabled = True
 my_omega0.disabled = True
 my_tilt.disabled = True
-phi = 0
-theta = tilt_angle
-psi = 0
-def computeDPhi(theta, psi):
-    return L / (I_perp * sin(theta)) + psi * cos(theta)
-
-
-def computeDTheta(theta, psi): 
-    return psi
-
-
-def computeDPsi(theta, psi): 
-    return -L * cos(theta) / (I_perp * sin(theta)) - psi * cos(theta) / sin(theta) + omega0
-
 
 while leave:
     rate(50)
     if running:
-        beyblade.rotate(angle=3*omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
+        # scene.camera.rotate(angle = 0.01, axis = vec(0,1,0))
+        # scene.center = vec(0, 0, 0)
 
-        dPhi = computeDPhi(theta, psi)
-        dTheta = computeDTheta(theta, psi)
-        dPsi = computeDPsi(theta, psi)
+        # Spin the beyblade around its own axis
+        beyblade.rotate(angle=omega0 * dt, axis=beyblade.axis, origin=beyblade.pos)
 
-        phi += dPhi * dt
-        theta += dTheta * dt
-        psi += dPsi * dt    
-        
+        # Calculate precession angular velocity
+        B = 2*M*g*a/I_perp
+        A = B*cos(tilt_angle)
 
-        omega_pr += phi_dot * dt
+        # Calculate nutation angular velocity
+        nutation_rate = calculate_nutation_rate(L, I_perp)
+        # a0 = A - (Lz/I_perp)**2
+        a1 = 2*Lz*L/((I_perp)**2)
+        a2 = -A - (L/I_perp)**2 
+        bounds = quadraticEqSolver(B,a2,a1)
+        # Apply nutation
+        phi_dot = (Lz-L*cos(tilt_angle))/(I_perp*(sin(theta)**2))
+        print("previous_theta_dot: ",previous_theta_dot)
+        if (theta<=tilt_angle):
+            print("DOWN IS NOW TRUE!")
+            theta_dot = 0
+            down = False
+        previous_theta_dot = theta_dot
+        if (down):
+            print("I ran!")
+            theta_dot = -theta_dot
+            down=False
+        if (theta>=beta):
+            down=True
+        elif (((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)>=0):
+           theta_dot = theta_dot+(sqrt((2/I_perp)*(Energy-(.5*I0*(omega0**2))+(M*g*a*cos(theta))) +((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)**4)/(20**4)
+           print("This thing equals: ",((2/I_perp)*(Energy-.5*I0*omega0**2-M*g*a*cos(theta)) - ((Lz-L*cos(theta)) / (I_perp*sin(theta)))**2)/20)
         
-        beyblade.rotate(angle=dPhi * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
-        Lhat.rotate(angle=dPhi * dt, axis=vector(0, 1, 0))
-        earrow.rotate(angle=dPhi * dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
-        
+        nutation_angle = theta_dot*dt
+        omega_pr = omega_pr + phi_dot*dt
+        # Apply precession
+        # print("omega_pr*dt: ",omega_pr*dt)
+        beyblade.rotate(angle=omega_pr*dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+        Lhat.rotate(angle=omega_pr*dt, axis=vector(0, 1, 0))
+        earrow.rotate(angle=omega_pr*dt, origin=vector(0, 0, 0), axis=vector(0, 1, 0))
+
+        # rotated_angle += omega_pr * dt * 5
         theta = diff_angle(vector(0, 1, 0), -beyblade.axis)
         tangent = cross(beyblade.axis, vector(0, 1, 0)).norm()
+        # print("nutation angle: ",nutation_angle)
+        # print("theta: ",degrees(theta))
+        # print("theta_dot: ",theta_dot)
+        # print("phi_dot: ",phi_dot)
+        # print("Current angle difference:", degrees(diff_angle(vector(0, -1, 0), beyblade.axis)))  # Correct axis orientation
+        # print("\n")
 
-        beyblade.rotate(angle=dTheta*dt, origin=vector(0, 0, 0), axis=tangent)
+        beyblade.rotate(angle=nutation_angle, origin=vector(0, 0, 0), axis=tangent)
     
         nutation_arrow.pos = beyblade.pos
         nutation_arrow.axis = tangent * 2
+        # Trace the path of the top's axis slightly above the actual axis
         path.append(pos=-beyblade.axis * 1.5)
-        
-        time += dt
-        if path.npoints > 50:
+        time+=dt
+        if path.npoints > 50:  # Adjust the number of points for the temporary path
             path.pop(0)
     
-        if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(69):
+        if diff_angle(vector(0, -1, 0), beyblade.axis) > radians(69):  # Correct axis orientation
             print("Top has fallen")
             break
